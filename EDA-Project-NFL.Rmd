@@ -107,7 +107,11 @@ nfl_density_compare <- nfl_passing_plays %>%
   theme_bw() +
   labs(x = "Yards Gained",
        y = "Number of Passing Plays") +
-  scale_color_manual(values = c("darkblue","darkorange"))
+  scale_color_manual(values = c("darkblue","darkorange")) +
+  theme(
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  )
 
 nfl_ecdf_compare <- nfl_passing_plays %>%
   ggplot(aes(x = yards_gained, 
@@ -117,7 +121,11 @@ nfl_ecdf_compare <- nfl_passing_plays %>%
   theme_bw() +
   labs(x = "Yards Gained",
        y = "Proportion of Passing Plays") +
-  scale_color_manual(values = c("darkblue","darkorange"))
+  scale_color_manual(values = c("darkblue","darkorange")) +
+  theme(
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  )
 
 nfl_density <- nfl_passing_plays %>%
   ggplot(aes(x = yards_gained)) + 
@@ -125,7 +133,10 @@ nfl_density <- nfl_passing_plays %>%
   geom_rug(alpha = 0.3) +
   theme_bw() +
   labs(x = "Yards Gained",
-       y = "Number of Passing Plays") 
+       y = "Number of Passing Plays") +
+  theme(
+    axis.title.x = element_blank()
+  )
 
 nfl_ecdf <- nfl_passing_plays %>%
   ggplot(aes(x = yards_gained)) +
@@ -133,10 +144,10 @@ nfl_ecdf <- nfl_passing_plays %>%
   geom_rug(alpha = 0.3) +
   theme_bw() +
   labs(x = "Yards Gained",
-       y = "Proportion of Passing Plays") 
+       y = "Proportion of Passing Plays")
 
 
-nfl_density + nfl_ecdf + nfl_density_compare + nfl_ecdf_compare + plot_layout(guides = 'collect')
+nfl_density + nfl_density_compare + nfl_ecdf + nfl_ecdf_compare + plot_layout(guides = 'collect')
 ```
 
 ### **Fourth Hypothesis:**
