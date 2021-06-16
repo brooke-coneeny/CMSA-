@@ -1,0 +1,213 @@
+---
+title: "Exploratory Data Analysis"
+subtitle: "NFL"  
+author: 
+  - "Sarah Sult"
+  - "Brooke Coneeny"
+  - "Devin Basley"
+date: '`r Sys.Date()`'
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  fig.width=9, fig.height=3.5, fig.retina=3,
+  out.width = "100%",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  fig.show = TRUE,
+  hiline = TRUE
+)
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_duo_accent(
+  primary_color = "#1381B0",
+  secondary_color = "#1381B0",
+  inverse_header_color = "#FFFFFF"
+)
+```
+
+
+class: inverse center middle
+
+# Background
+
+
+---
+
+# Data
+
+*   From nflfastR package
+*   2020 regular season passing plays
+--
+
+*   Each observation is one pass from this season
+--
+
+*   Variables
+--
+
+    *   Information on the player attempting the pass
+--
+
+    *   Info about the pass
+--
+
+    *   Context about the reciever
+--
+
+    *   Context about the team
+--
+
+    *   Game context
+--
+
+    *   Description about the play
+
+---
+
+<span style="color: white;">
+Filling up space </span>
+
+<span style="color: white;">
+Filling up space </span>
+
+<span style="color: white;">
+Filling up space </span>
+
+
+```{r, echo=FALSE, fig.align='center'}
+library(gt)
+nfl_passing_plays %>%
+  select(passer_player_name, posteam, qb_hit,sack, interception, complete_pass, yards_gained, epa) %>%
+  slice(373:378) %>%
+  gt()
+```
+
+
+---
+
+##Comparing NFL Team's Offensive Line Strength
+
+```{r plot1, fig.align = "center", echo=FALSE}
+nfl_passing_plays %>%
+  group_by(posteam) %>%
+  summarize(total_hit = sum(qb_hit) + sum(sack)) %>%
+  ungroup() %>%
+  mutate(posteam = fct_reorder(posteam, total_hit)) %>%
+  ggplot(aes(x = posteam, y = total_hit)) + 
+  geom_col(fill = "slategray3") +
+  labs(
+    x = "Possessing Team",
+    y = "QB Hits + Sacks",
+    caption = "Data courtesy of nflfastR"
+  ) +
+  theme_bw() +
+  theme(
+    plot.background = element_rect(fill = "grey95"),
+    panel.background = element_rect(fill = "grey95"),
+    panel.grid.minor = element_blank(),
+    text = element_text(family = "Century", size = 12),
+    plot.title = element_text(size = 17),
+    axis.text.x = element_text(size = 8, angle = 90)
+  )
+```
+
+
+---
+
+#Interception Not More Likely When Hit
+
+```{r,echo=FALSE}
+nfl_passing_plays %>%  
+  filter(sack != 1) %>%                 #remove sacks because it artificially inflates 
+                                      #the value of hit/no interception
+  group_by(qb_hit, interception, complete_pass) %>%
+  summarize(count = n(),
+            joint_prob = count / nrow(nfl_passing_plays)) %>%
+  ungroup() %>%
+  mutate(qb_hit_name = case_when(
+    qb_hit == 0 ~ "No hit",
+    TRUE ~ "Hit"
+  ), interception_name = case_when(
+    interception == 0 ~ "No interception",
+    TRUE ~ "Interception"
+  ), complete_pass = case_when(
+    complete_pass == 0 ~ "Incomplete pass",
+    TRUE ~ "Complete pass"
+  )) %>%
+  ggplot(aes(x=qb_hit_name, y=interception_name)) +
+  geom_tile(aes(fill=count), color="white")+
+  geom_text(aes(label = round(joint_prob, digits=4)), color = "white")+
+  facet_wrap(~ complete_pass, ncol=2) +
+  scale_fill_viridis_b()+
+  theme_bw()+
+  theme(legend.position = "bottom", legend.key.width = unit(2,"cm")) +
+  labs(
+    x = "QB Hit",
+    y = "Interception",
+    caption = "Data courtesy of nflfastR"
+  )
+```
+
+
+---
+
+#Passing Plays Don't Get Many Yards
+
+```{r, echo = FALSE}
+((yards_gained_dens_total + theme(axis.title.x = element_blank())+ yards_gained_dens + theme(axis.title.y = element_blank(), axis.title.x = element_blank(), legend.position = "none")) /( yards_gained_ecdf_total + yards_gained_ecdf + theme(axis.title.y = element_blank()))) + 
+  plot_layout(guides="collect") + plot_annotation(caption = "Data courtesy of nflfastR")
+
+```
+
+
+---
+#Methods for Clustering Example
+*   Collapsed the data into one row per thrower with their total hits (hits + sacks), total expected points added, and total number of throws
+--
+
+*   Graphed the ecdf of total throws to determine our cutoff
+--
+
+```{r, echo=FALSE}
+nfl_passing_plays_total_hits_and_epa %>%
+  ggplot(aes(x=total_throws)) +
+  stat_ecdf()+
+  geom_vline(xintercept = 5, linetype = "dashed", color = "darkred")+
+  theme_bw()+
+  labs(x = "Total Throws",
+       y = "Proportion")
+```
+
+---
+
+##Categorizing Players by Total Hits and Total EPA
+
+```{r, echo = FALSE}
+nfl_passing_plays_total_hits_and_epa_over5 %>%
+  mutate(player_clusters = as.factor(cutree(hits_epa_complete_hclust, k=3)),) %>%
+  ggplot(aes(x=total_hits, y=total_epa, color = player_clusters))+
+  geom_point(alpha = .75)+
+  theme_bw()+
+  theme(legend.position = "bottom")+
+  ggthemes::scale_color_colorblind()+
+  labs(x = "Total Hits",
+       y = "Total Expected Points Added",
+       caption = "Data courtesy of nflfastR")
+
+```
+
