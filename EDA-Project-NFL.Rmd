@@ -152,6 +152,7 @@ nfl_density + nfl_density_compare + nfl_ecdf + nfl_ecdf_compare + plot_layout(gu
 
 ### **Fourth Hypothesis:**
 ```{r plot 4, fig.align = "center", echo=FALSE}
+#create new variables 
 nfl_passing_plays_total_hits_and_epa <- nfl_passing_plays %>%
   group_by(passer_player_name) %>%
   summarise(
@@ -160,15 +161,22 @@ nfl_passing_plays_total_hits_and_epa <- nfl_passing_plays %>%
     total_throws = n()) %>%
   ungroup()
 
+#How many throws did the majority of QBs make?
 nfl_passing_plays_total_hits_and_epa %>%
   ggplot(aes(x = total_throws)) +
   stat_ecdf() +
   geom_vline(xintercept = 5, linetype = "dashed", color = "darkred") +
   theme_bw()
 
+#what percent threw less than 5 times
+P = ecdf(nfl_passing_plays_total_hits_and_epa$total_throws)
+P(5)
+
+#filter data to only contain QBs that threw more than 5 times 
 nfl_passing_plays_total_hits_and_epa_over5 <- nfl_passing_plays_total_hits_and_epa %>%
   filter(total_throws > 5)
 
+#create cluster plot 
 play_dist_hits_and_epa <- dist(dplyr::select(nfl_passing_plays_total_hits_and_epa_over5, total_hits, total_epa))
 
 hits_epa_complete_hclust <- hclust(play_dist_hits_and_epa, method = "complete")
