@@ -1,43 +1,31 @@
----
-title: 'EDA Project: NFL data'
-output:
-  pdf_document: default
-  html_document: default
----
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 library(nflfastR)
 library(tidyverse)
 library(dplyr)
 library(patchwork)
-```
 
-```{r, eval = FALSE}
 # Load all regular season passes from the 2020 regular season:
 nfl_passing_plays <- load_pbp(2020) %>%
   filter(play_type == "pass", season_type == "REG", 
          !is.na(epa), !is.na(posteam), posteam != "") %>%
   select(# Player info attempting the pass:
-         passer_player_name, passer_player_id, posteam, 
-         # Info about the pass:
-         complete_pass, interception, yards_gained, touchdown, 
-         pass_location, pass_length, air_yards, yards_after_catch, epa, wpa,
-         shotgun, no_huddle, qb_dropback, qb_hit, sack,
-         # Context about the receiver:
-         receiver_player_name, receiver_player_id	,
-         # Team context:
-         posteam, defteam, posteam_type, 
-         # Play and game context:
-         play_id, yardline_100, side_of_field, down, qtr, play_clock,
-         half_seconds_remaining, game_half, game_id,
-         home_team, away_team, home_score, away_score,
-         # Description of play
-         desc)
-```
+    passer_player_name, passer_player_id, posteam, 
+    # Info about the pass:
+    complete_pass, interception, yards_gained, touchdown, 
+    pass_location, pass_length, air_yards, yards_after_catch, epa, wpa,
+    shotgun, no_huddle, qb_dropback, qb_hit, sack,
+    # Context about the receiver:
+    receiver_player_name, receiver_player_id	,
+    # Team context:
+    posteam, defteam, posteam_type, 
+    # Play and game context:
+    play_id, yardline_100, side_of_field, down, qtr, play_clock,
+    half_seconds_remaining, game_half, game_id,
+    home_team, away_team, home_score, away_score,
+    # Description of play
+    desc)
 
-###  **First hypothesis: What teams have the worse offensive lines**
-```{r plot1, fig.align = "center", echo=FALSE}
+# First hypothesis: What teams have the worse offensive lines
+
 nfl_passing_plays %>%
   group_by(posteam) %>%
   summarize(total_hit = sum(qb_hit) + sum(sack)) %>%
@@ -59,11 +47,9 @@ nfl_passing_plays %>%
     plot.title = element_text(size = 17),
     axis.text.x = element_text(size = 8, angle = 90)
   )
-```
 
-### **Second hypothesis: If a QB is hit, are they more likely to throw an interception?**
+# Second hypothesis: If a QB is hit, are they more likely to throw an interception?
 
-```{r plot 2, fig.align = "center", echo=FALSE}
 nfl_passing_plays %>%   
   filter(sack != 1) %>% #remove sacks because it inflates the value of no hit/interception
   group_by(qb_hit, interception) %>%
@@ -93,11 +79,9 @@ nfl_passing_plays %>%
     axis.title.x = element_blank(),
     axis.ticks = element_blank()
   )
-```
 
-### **Third hypothesis:**
+# Third hypothesis: Do the majority of plays will fall between 0 and 10 yards?
 
-```{r plot 3, fig.align = "center", echo=FALSE}
 nfl_density_compare <- nfl_passing_plays %>%
   ggplot(aes(x = yards_gained, 
              color = as.factor(complete_pass))) +
@@ -110,7 +94,7 @@ nfl_density_compare <- nfl_passing_plays %>%
   theme(
     axis.title.y = element_blank(),
     axis.title.x = element_blank(),
-      plot.background = element_rect(fill = "grey95"),
+    plot.background = element_rect(fill = "grey95"),
     panel.background = element_rect(fill = "grey95"),
     legend.background = element_rect(fill = "grey95"),
     legend.key = element_rect(fill = "grey95"),
@@ -183,12 +167,10 @@ nfl_ecdf <- nfl_passing_plays %>%
     axis.text.x = element_text(size = 8)
   )
 
-
 nfl_density + nfl_density_compare + nfl_ecdf + nfl_ecdf_compare + plot_layout(guides = 'collect')
-```
 
-### **Fourth Hypothesis:**
-```{r plot 4, fig.align = "center", echo=FALSE}
+# Fourth Hypothesis: Players that are hit more have lower total EPA?
+
 #create new variables 
 nfl_passing_plays_total_hits_and_epa <- nfl_passing_plays %>%
   group_by(passer_player_name) %>%
@@ -241,5 +223,3 @@ nfl_passing_plays_total_hits_and_epa_over5 %>%
     caption = "Data courtesy of nflfastR",
     color = "Player Clusters"
   )
-
-```
