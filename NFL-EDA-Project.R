@@ -109,10 +109,9 @@ nfl_density_compare <- nfl_passing_plays %>%
   )
 
 nfl_ecdf_compare <- nfl_passing_plays %>%
-  mutate(complete_pass = case_when(
-    complete_pass == 0 ~ "Incomplete Pass",
-    TRUE ~ "Complete Pass"
-  )) %>%
+  mutate(
+    complete_pass = ifelse(complete_pass == 0 ~ "Incomplete Pass", "Complete Pass")
+  ) %>%
   ggplot(aes(x = yards_gained, 
              color = as.factor(complete_pass))) +
   stat_ecdf() +
