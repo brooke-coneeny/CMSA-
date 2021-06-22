@@ -129,33 +129,34 @@ nfl_passing_plays %>%
 #Interception Not More Likely When Hit
 
 ```{r,echo=FALSE}
-nfl_passing_plays %>%  
-  filter(sack != 1) %>%                 #remove sacks because it artificially inflates 
-                                      #the value of hit/no interception
+nfl_complete <- nfl_passing_plays %>%   
+  filter(complete_pass == 1) 
+
+nfl_not_complete <- nfl_passing_plays %>%
+  filter(complete_pass == 0)
+  
+nfl_passing_plays %>%
+  filter(sack != 1) %>% #remove sacks because it artificially inflates the value of hit/no interception 
   group_by(qb_hit, interception, complete_pass) %>%
-  summarize(count = n(),
-            joint_prob = count / nrow(nfl_passing_plays)) %>%
+  summarize(
+    count = n(), 
+    joint_prob = case_when(complete_pass == 0 ~ count/nrow(nfl_not_complete), TRUE ~ count/nrow(nfl_complete))
+  ) %>%
   ungroup() %>%
-  mutate(qb_hit_name = case_when(
-    qb_hit == 0 ~ "No hit",
-    TRUE ~ "Hit"
-  ), interception_name = case_when(
-    interception == 0 ~ "No interception",
-    TRUE ~ "Interception"
-  ), complete_pass = case_when(
-    complete_pass == 0 ~ "Incomplete pass",
-    TRUE ~ "Complete pass"
-  )) %>%
+  mutate(
+    qb_hit_name = ifelse(qb_hit == 0, "No Hit", "Hit"),
+    interception_name = ifelse(interception == 0, "No Interception", "Interception"),
+    complete_pass = ifelse(complete_pass == 0, "Incomplete Pass", "Complete Pass")
+  ) %>%
   ggplot(aes(x=qb_hit_name, y=interception_name)) +
-  geom_tile(aes(fill=count), color="white")+
-  geom_text(aes(label = round(joint_prob, digits=4)), color = "white")+
-  facet_wrap(~ complete_pass, ncol=2) +
-  scale_fill_viridis_b()+
-  theme_bw()+
-  theme(legend.position = "bottom", legend.key.width = unit(2,"cm")) +
+  geom_tile(aes(fill = count), color="white") +
+  geom_text(aes(label = round(joint_prob, digits=4)), color = "white") +
+  facet_wrap(~complete_pass, ncol = 2) +
+  scale_fill_viridis_b() +
   labs(
     x = "QB Hit",
-    y = "Interception",
+    y = "Intercepton",
+    title = "Interception Not More Likely When Hit",
     caption = "Data courtesy of nflfastR"
   )
 ```
