@@ -50,37 +50,35 @@ nfl_passing_plays %>%
 
 # Second hypothesis: If a QB is hit, are they more likely to throw an interception?
 
-nfl_passing_plays %>%   
-  filter(sack != 1) %>% #remove sacks because it inflates the value of no hit/interception
-  group_by(qb_hit, interception) %>%
-  summarize(count = n(), joint_prob = count / nrow(nfl_passing_plays)) %>%
+nfl_complete <- nfl_passing_plays %>%   
+  filter(complete_pass == 1) 
+
+nfl_not_complete <- nfl_passing_plays %>%
+  filter(complete_pass == 0)
+  
+nfl_passing_plays %>%
+  filter(sack != 1) %>% #remove sacks because it artificially inflates the value of hit/no interception 
+  group_by(qb_hit, interception, complete_pass) %>%
+  summarize(
+    count = n(), 
+    joint_prob = case_when(complete_pass == 0 ~ count/nrow(nfl_not_complete), TRUE ~ count/nrow(nfl_complete))
+  ) %>%
   ungroup() %>%
   mutate(
     qb_hit_name = ifelse(qb_hit == 0, "No Hit", "Hit"),
-    interception_name = ifelse(interception == 0, "No Interception", "Interception")
+    interception_name = ifelse(interception == 0, "No Interception", "Interception"),
+    complete_pass = ifelse(complete_pass == 0, "Incomplete Pass", "Complete Pass")
   ) %>%
   ggplot(aes(x=qb_hit_name, y=interception_name)) +
   geom_tile(aes(fill = count), color="white") +
-  geom_text(aes(label = round(joint_prob, digits=4)), color = "white", size = 7) +
+  geom_text(aes(label = round(joint_prob, digits=4)), color = "white") +
+  facet_wrap(~complete_pass, ncol = 2) +
+  scale_fill_viridis_b() +
   labs(
     x = "QB Hit",
     y = "Intercepton",
     title = "Interception Not More Likely When Hit",
     caption = "Data courtesy of nflfastR"
-  ) +
-  theme(
-    plot.caption.position = "plot",
-    legend.position = "right", legend.key.width = unit(2,"cm"),
-    plot.background = element_rect(fill = "grey95"),
-    panel.background = element_rect(fill = "grey95"),
-    text = element_text(family = "Century", size = 20),
-    plot.title = element_text(size = 25),
-    legend.background = element_rect(fill = "grey95"),
-    axis.text.x = element_text(size = 15),
-    axis.text.y = element_text(size = 15),
-    axis.title.y = element_blank(),
-    axis.title.x = element_blank(),
-    axis.ticks = element_blank()
   )
 
 # Third hypothesis: Do the majority of plays will fall between 0 and 10 yards?
